@@ -26,8 +26,10 @@ complete. The fix was to validate IDs at the boundary and enforce that invariant
 the same discipline that keeps trading and account state consistent.
 
 **Auditability and failure recovery.** Each run records its state transitions and writes a
-completion record only after validation passes. A failed run is marked as failed instead of
-partly succeeding, so it can be diagnosed and safely rerun.
+completion record only after validation passes. My daily internship search merges roles from
+many sources into one tracked state. It closes a role only after two successful reads miss it,
+never overwrites decisions I made, and fails unless every save reads back correctly. One outage
+can't corrupt state, much like reconciling account records.
 
 **Safe handling of external actions.** Delivery runs last and only after validation. The model
 saying "done" is never treated as proof.

@@ -30,8 +30,9 @@ Delivery to the user
 
 ## Scheduled workflow flow
 
-Scheduled jobs in my OpenClaw environment (such as the daily stock observer and the
-game-market monitor) follow the same pattern without a live user prompt:
+Scheduled jobs in my OpenClaw environment (such as the daily stock observer, the
+game-market monitor, and the daily internship search) follow the same pattern without a live
+user prompt:
 
 ```
 Scheduled trigger
@@ -67,6 +68,37 @@ Delivery
   non-trading day), invariants hold.
 - **Delivery**: only after validation passes. A completion sentinel is written only after
   delivery succeeds.
+
+## Tracked-state reconciliation (internship search)
+
+The internship search keeps long-lived state rather than producing one-off reports, so it adds
+a reconciliation step between collection and delivery:
+
+```
+Scheduled trigger
+    ↓
+Read each source (record ok / failed per source)
+    ↓
+Filter, with a recorded reason for anything hidden
+    ↓
+Match to tracked roles: board job ID → normalized company + title
+    ↓
+Update posting state (new / still open / missed / closed / reopened)
+    ↓
+Save → read back → compare   (fail the run if anything didn't save)
+    ↓
+Daily message listing only what changed
+```
+
+Rules that keep this state correct:
+
+- **Absence needs proof.** A missed scan counts only when every source that has listed the
+  role was read successfully. A role closes after two consecutive misses, so one outage or
+  one flaky read never closes anything.
+- **Split ownership.** The scanner owns posting state (open/closed). The human owns
+  decisions (Applied, Interviewing, and so on). A scan never writes a human-owned field.
+- **No external action beyond the report.** The workflow never applies, submits forms, or
+  contacts anyone.
 
 ## What counts as success
 

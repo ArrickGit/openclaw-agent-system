@@ -13,6 +13,8 @@ from scratch for publication. It is not an export of the private system.
 - Agent system prompts, private configuration, internal tool schemas, scheduler identifiers,
   and infrastructure details
 - Real market prices or listings collected by the private monitors
+- Internship search configuration and tracker contents: target companies, locations,
+  personal eligibility details, application statuses, and the tools used to store them
 
 ## What is included
 
@@ -25,6 +27,9 @@ from scratch for publication. It is not an export of the private system.
 
 - **Read-only collection**: the game-market monitor reads pages. It does not post, reply,
   message anyone, or buy anything.
+- **No applying**: the internship search finds and tracks roles. It never applies, submits
+  forms, or contacts companies or recruiters, and it does not get around sites that block
+  scripted requests.
 - **No trading**: the stock observer produces research notes. It has no brokerage access and
   does not place orders.
 - **Validation before external action**: delivery runs only after validation passes.

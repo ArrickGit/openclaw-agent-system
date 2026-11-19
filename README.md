@@ -12,6 +12,9 @@ game-market monitor, both designed around structured data, deterministic identif
 validation, and safe failure. I also set up Hermes as a peer engineering agent that helps
 investigate failures and verify repairs.
 
+It also runs a daily internship search that finds, filters, and tracks roles across many
+sources. It never applies to anything or contacts anyone.
+
 ---
 
 ## 1. What OpenClaw is
@@ -41,6 +44,7 @@ applies) a completion record.
 | Scheduled workflows | Recurring jobs run without a manual prompt and archive what they produce |
 | Structured reports | Outputs are JSON and Markdown with fixed fields, not free-form chat |
 | Validation and failure handling | Each stage checks its inputs; failed runs are marked failed, not "mostly done" |
+| State reconciliation | Records from many sources are merged into one tracked state that survives partial outages |
 | Agent-to-agent debugging | **Hermes**, a peer engineering agent that helps debug OpenClaw, investigates failures and proposes fixes |
 
 ## 3. Daily stock observer
@@ -85,7 +89,38 @@ A self-contained simulation lives in [`demo/observation_monitor.py`](demo/observ
 See [`examples/sample_game_market_report.md`](examples/sample_game_market_report.md) for a
 simulated report.
 
-## 5. Hermes: peer engineering agent
+## 5. Daily internship search
+
+A scheduled workflow that finds internship postings, tracks them over time, and sends me a
+daily message listing only what changed.
+
+- **Find and track only**: it never applies, never submits a form, and never contacts a
+  company or recruiter. Applying is always a manual decision.
+- **Many sources, one row per role**: reads public internship lists and public job-board
+  APIs. A posting that appears in several places is matched to one tracked role, first by the
+  board's own job ID, then by normalized company and title.
+- **Explicit filters with reasons**: roles that clearly don't fit (not an internship, wrong
+  location, an eligibility requirement I can't meet, a term that has already ended) are hidden
+  with a recorded reason, not silently dropped. Unclear cases stay visible with a warning.
+- **Outage-safe closing**: a role is marked closed only after it is missing from a
+  *successfully read* source on two scans in a row. A failed or blocked source never closes
+  anything.
+- **Human-owned fields**: statuses I set by hand (such as Applied or Interviewing) are never
+  overwritten by a scan.
+- **Verified persistence**: the daily run writes to the tracker, reads everything back, and
+  exits with an error if anything didn't save. Failed writes stay queued for the next run.
+- **Respects blocks**: sites that refuse scripted requests are left alone and checked by
+  hand. The search does not try to get around them.
+- **Code collects, the agent researches**: a deterministic scanner does the collecting. The
+  agent handles only the judgment-heavy part, such as checking whether an unfamiliar company
+  really is a startup.
+
+A simulation of the reconciliation rules lives in
+[`demo/internship_tracker.py`](demo/internship_tracker.py). See
+[`examples/sample_internship_report.md`](examples/sample_internship_report.md) for a simulated
+daily message.
+
+## 6. Hermes: peer engineering agent
 
 Hermes is a separate peer engineering agent that helps debug OpenClaw.
 
@@ -96,10 +131,13 @@ Hermes is a separate peer engineering agent that helps debug OpenClaw.
 - Requires verification: a fix counts only after the affected workflow is rerun and passes
 - Never exposes credentials, and never changes systems without my authorization
 
-## 6. Engineering lessons
+## 7. Engineering lessons
 
 - **Idempotency**: rerunning a workflow on the same inputs must not create duplicate alerts
   or records.
+- **Absence is not evidence when a read failed**: state only changes on data that was
+  actually read successfully.
+- **Clear ownership of fields**: automation owns posting state; the human owns decisions.
 - **Deterministic identifiers**: IDs come from normalized content, not from scan order or
   wall-clock time.
 - **Validation before persistence**: bad data is rejected at the boundary before it is
@@ -127,8 +165,10 @@ openclaw-agent-system/
 ├── demo/
 │   ├── agent_runtime.py           # minimal tool-using workflow runtime (simulated)
 │   ├── observation_monitor.py     # game-market monitor simulation (simulated)
+│   ├── internship_tracker.py      # internship search reconciliation (simulated)
 │   ├── requirements.txt
-│   └── test_observation_monitor.py
+│   ├── test_observation_monitor.py
+│   └── test_internship_tracker.py
 ├── examples/                  # simulated reports with fictional data
 └── incidents/                 # sanitized incident write-ups
 ```
@@ -141,7 +181,9 @@ Requires Python 3.10+. The demo uses only the standard library.
 cd demo
 python observation_monitor.py      # simulated monitor run, prints structured JSON
 python agent_runtime.py            # simulated workflow runs: success, safe failure, unrouted
+python internship_tracker.py       # simulated four-day tracker run, including a source outage
 python -m unittest -v              # run the tests (or: pip install -r requirements.txt && pytest -v)
 ```
 
-The demo makes no network calls, uses no credentials, and sends no real messages.
+The demo makes no network calls, uses no credentials, sends no real messages, and never
+applies to anything.
