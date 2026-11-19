@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Secrets and local configuration (never commit)
+.env
+.env.*
+*.pem
+*.key
+secrets/
+credentials*
+config.local.*
+
+# Runtime state, logs, and browser artifacts
+*.log
+logs/
+state/
+*.lock
+*.sentinel
+screenshots/
+browser-profile/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
